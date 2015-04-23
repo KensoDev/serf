@@ -4,6 +4,8 @@
 # Recipe:: default
 #
 
+include_recipe 'logrotate'
+
 # Initializes the serf_helper class by giving it access to `node`
 helper = serf_helper.new self
 
@@ -17,53 +19,20 @@ user node["serf"]["user"] do
 end
 
 # Create serf directories
-
-# /opt/serf
-directory node["serf"]["base_directory"] do
-  group node["serf"]["group"]
-  owner node["serf"]["user"]
-  mode 00755
-  recursive true
-  action :create
+[
+  helper.get_home_log_directory,
+  helper.get_home_config_directory,
+  helper.get_bin_directory,
+  helper.get_event_handlers_directory
+].each do |dir|
+  directory dir do
+    group node["serf"]["group"]
+    owner node["serf"]["user"]
+    mode 00755
+    recursive true
+    action :create
+  end
 end
-
-# /opt/serf/event_handlers
-directory helper.get_event_handlers_directory do
-  group node["serf"]["group"]
-  owner node["serf"]["user"]
-  mode 00755
-  recursive true
-  action :create
-end
-
-# /opt/serf/bin
-directory helper.get_bin_directory do
-  group node["serf"]["group"]
-  owner node["serf"]["user"]
-  mode 00755
-  recursive true
-  action :create
-end
-
-# /opt/serf/config
-directory helper.get_home_config_directory do
-  group node["serf"]["group"]
-  owner node["serf"]["user"]
-  mode 00755
-  recursive true
-  action :create
-end
-
-# /opt/serf/log
-directory helper.get_home_log_directory do
-  group node["serf"]["group"]
-  owner node["serf"]["user"]
-  mode 00755
-  recursive true
-  action :create
-end
-
-# Create unix expected directories (/etc/serf, /var/log/serf, ...)
 
 # /var/log/serf
 link node["serf"]["log_directory"] do
@@ -121,14 +90,13 @@ link "/usr/bin/serf" do
   to helper.get_serf_binary
 end
 
-# Add entry to logrotate.d to log roll agents log files daily
-template "/etc/logrotate.d/serf_agent" do
-  source  "serf_log_roll.erb"
-  group node["serf"]["group"]
-  owner node["serf"]["user"]
-  mode 00755
-  variables(agent_log_file: helper.get_agent_log)
-  backup false
+logrotate_app 'serf' do
+  cookbook  'logrotate'
+  path      [helper.get_agent_log]
+  options   ['compress', 'copytruncate', 'dateext', 'delaycompress', 'missingok']
+  create    "644 #{node['serf']['user']} #{node['serf']['group']}"
+  frequency 'daily'
+  rotate    7
 end
 
 # Download and configure specified event handlers
