@@ -1,7 +1,7 @@
 # coding: UTF-8
 require 'json'
 
-class Chef::Recipe::serf_helper < Chef::Recipe
+class Chef::Recipe::SerfHelper < Chef::Recipe
 
   SERF_VERSION_REGEX = /^Serf v\d.\d.\d/
   VERSION_REGEX = /\d.\d.\d/
