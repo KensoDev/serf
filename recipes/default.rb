@@ -1,4 +1,4 @@
-# coding: UTF-8 
+# coding: UTF-8
 #
 # Cookbook Name:: serf
 # Recipe:: default
@@ -11,7 +11,7 @@ helper = serf_helper.new self
 group node["serf"]["group"] do
   action :create
 end
-  
+
 user node["serf"]["user"] do
   gid node["serf"]["group"]
 end
@@ -92,13 +92,13 @@ end
 
 # Unzip serf binary
 execute "unzip serf binary" do
-  
+
   user node["serf"]["user"]
   cwd helper.get_bin_directory
-  
+
   # -q = quiet, -o = overwrite existing files
   command "unzip -qo #{helper.get_zip_file_path}"
-  
+
   notifies :restart, "service[serf]"
   only_if do
     current_version = helper.get_serf_installed_version
@@ -133,20 +133,20 @@ end
 
 # Download and configure specified event handlers
 node["serf"]["event_handlers"].each do |event_handler|
-  
+
   unless event_handler.is_a? Hash
     raise "Event handler [#{event_handler}] is required to be a hash"
   end
-  
+
   event_handler_command = ""
   if event_handler.has_key? "event_type"
     event_handler_command << "#{event_handler["event_type"]}="
   end
-  
+
   if event_handler.has_key? "url"
     event_handler_path =  File.join helper.get_event_handlers_directory, File.basename(event_handler["url"])
     event_handler_command << event_handler_path
-    
+
     # Download event handler script
     remote_file event_handler_path do
       source event_handler["url"]
@@ -155,11 +155,11 @@ node["serf"]["event_handlers"].each do |event_handler|
       mode 00755
       backup false
     end
-    
+
   else
     raise "Event handler [#{event_handler}] has no 'url'"
   end
-  
+
   node.default["serf"]["agent"]["event_handlers"] << event_handler_command
 end
 
