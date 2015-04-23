@@ -7,7 +7,7 @@
 include_recipe 'logrotate'
 
 # Initializes the serf_helper class by giving it access to `node`
-helper = serf_helper.new self
+helper = SerfHelper.new self
 
 # Create serf user/group
 group node["serf"]["group"] do
